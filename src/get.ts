@@ -26,7 +26,7 @@ export async function getById(event: HttpRequest): Promise<HttpResponse> {
   } catch (err) {
     return {
       statusCode: err.statusCode || 500,
-      body: "No no"
+      body: "Internal Server Error Oops" + err
     }
   }
 }

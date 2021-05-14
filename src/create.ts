@@ -22,20 +22,21 @@ export async function createProduct(event: HttpRequest): Promise<HttpResponse> {
       id: uuid.v4(),
       name: form.name,
       description: form.description,
-      price: form.price
+      price: form.price,
+      stock: form.stock
     }
   }
 
   try {
     await ddb.put(params).promise()
     return {
-      statusCode: 200,
+      statusCode: 201,
       body: JSON.stringify(params.Item)
     }
   } catch (err) {
     return {
       statusCode: err.statusCode || 500,
-      body: "Product could not be created"
+      body: "Internal Server Error Oops: " + err
     }
   }
 }

@@ -17,7 +17,7 @@ export async function getProducts(): Promise<HttpResponse> {
   } catch (err) {
     return {
       statusCode: err.statusCode || 500,
-      body: "Error"
+      body: "Internal Server Error Oops" + err
     }
   }
 }

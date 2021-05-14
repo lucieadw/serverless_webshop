@@ -70,6 +70,22 @@ functions:
           path: products/{id}
           method: delete
           cors: true
+  
+  update:
+    handler: src/update.update
+    events:
+      - http:
+          path: products/{id}
+          method: put
+          cors: true
+          
+  populate:
+    handler: src/generator.populate
+    events:
+      - http:
+          path: generator
+          method: post
+          cors: true
 
 resources:
   Resources:
