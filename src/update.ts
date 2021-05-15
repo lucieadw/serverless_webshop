@@ -20,7 +20,7 @@ export async function update(event: HttpRequest): Promise<HttpResponse> {
     Key: {
       id: event.pathParameters.id,
     },
-    UpdateExpression: "set #name=:n, description=:d, price=:p, stock=:s",
+    UpdateExpression: "set #name=:n, description=:d, price=:p, stock=:s, category=:c",
     ExpressionAttributeNames: {
       '#name': 'name'
     },
@@ -28,7 +28,8 @@ export async function update(event: HttpRequest): Promise<HttpResponse> {
       ":n": form.name,
       ":d": form.description,
       ":p": form.price,
-      ":s": form.stock
+      ":s": form.stock,
+      ":c": form.category
     },
     ReturnValues: "ALL_NEW"
   }

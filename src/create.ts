@@ -23,7 +23,8 @@ export async function createProduct(event: HttpRequest): Promise<HttpResponse> {
       name: form.name,
       description: form.description,
       price: form.price,
-      stock: form.stock
+      stock: form.stock,
+      category: form.category
     }
   }
 

@@ -81,6 +81,7 @@ functions:
           
   populate:
     handler: src/generator.populate
+    timeout: 60
     events:
       - http:
           path: generator

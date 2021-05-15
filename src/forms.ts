@@ -1,6 +1,7 @@
 export interface CreateProduct {
   name: string
   description: string
+  category: string
   price: number
   stock: number
 }
@@ -17,5 +18,8 @@ export function validateCreateProduct(form: CreateProduct): string | undefined {
   }
   if (form.stock < 0) {
     return "Stock must be zero or more"
+  }
+  if (!form.category || typeof form.category !== 'string'){
+    return "Category must be type string and cannot be null"
   }
 }
