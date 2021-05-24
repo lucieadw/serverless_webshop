@@ -40,7 +40,7 @@ provider:
 
 functions:
   getAll:
-    handler: src/getAll.getProducts
+    handler: src/getAll.handler
     events:
       - http:
           path: products
@@ -48,7 +48,7 @@ functions:
           cors: true
 
   create:
-    handler: src/create.createProduct
+    handler: src/create.handler
     events:
       - http:
           path: products
@@ -56,32 +56,40 @@ functions:
           cors: true
 
   get:
-    handler: src/get.getById
+    handler: src/get.handler
     events:
       - http:
-          path: products/{id}
+          path: products/{category}/{id}
+          method: get
+          cors: true
+
+  getCategory:
+    handler: src/getCategory.handler
+    events:
+      - http:
+          path: products/{category}
           method: get
           cors: true
 
   delete:
-    handler: src/delete.deleteById
+    handler: src/delete.handler
     events:
       - http:
-          path: products/{id}
+          path: products/{category}/{id}
           method: delete
           cors: true
   
   update:
-    handler: src/update.update
+    handler: src/update.handler
     events:
       - http:
-          path: products/{id}
+          path: products/{category}/{id}
           method: put
           cors: true
           
   populate:
     handler: src/generator.populate
-    timeout: 60
+    timeout: 30
     events:
       - http:
           path: generator
@@ -96,12 +104,18 @@ resources:
       Properties:
         AttributeDefinitions:
           -
-            AttributeName: id
+            AttributeName: category
+            AttributeType: S
+          -
+            AttributeName: productId
             AttributeType: S
         KeySchema:
           -
-            AttributeName: id
+            AttributeName: category
             KeyType: HASH
+          -
+            AttributeName: productId
+            KeyType: RANGE
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1

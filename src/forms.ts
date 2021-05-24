@@ -1,12 +1,17 @@
 export interface CreateProduct {
+  category: string  //sort key
+  productId: string //partition key
   name: string
   description: string
-  category: string
   price: number
   stock: number
+  picture: string
 }
 
 export function validateCreateProduct(form: CreateProduct): string | undefined {
+  if (!form.productId || typeof form.productId !== 'string') {
+    return "ProductID must be type string and cannot be null"
+  }
   if (!form.name || typeof form.name !== 'string') {
     return "Name must be type string and cannot be null"
   }
@@ -21,5 +26,8 @@ export function validateCreateProduct(form: CreateProduct): string | undefined {
   }
   if (!form.category || typeof form.category !== 'string'){
     return "Category must be type string and cannot be null"
+  }
+  if(typeof form.picture !== 'string') {
+    return "Picture must be type string"
   }
 }

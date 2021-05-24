@@ -4,25 +4,26 @@ import { HttpRequest, HttpResponse } from './http'
 const ddb = new DynamoDB.DocumentClient({ region: "eu-central-1" })
 
 export async function handler(event: HttpRequest): Promise<HttpResponse> {
+
   const params = {
     TableName: process.env.PRODUCTS_TABLE!,
-    Key: {
-      category: event.pathParameters.category,
-      productId: event.pathParameters.id
-    },
+    KeyConditionExpression: "category = :category",
+    ExpressionAttributeValues: {
+      ":category": event.pathParameters.category
+    }
   }
 
   try {
-    const data = await ddb.get(params).promise()
-    if (data.Item) {
+    const data = await ddb.query(params).promise()
+    if (data) {
       return {
         statusCode: 200,
-        body: JSON.stringify(data.Item)
+        body: JSON.stringify(data.Items)
       }
     }
     return {
       statusCode: 404,
-      body: "Item not found"
+      body: "Category not found"
     }
   } catch (err) {
     return {

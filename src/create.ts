@@ -1,11 +1,11 @@
 import { DynamoDB } from 'aws-sdk';
 import { HttpRequest, HttpResponse } from './http'
-import * as uuid from 'uuid'
+
 import { CreateProduct, validateCreateProduct } from './forms';
 
 const ddb = new DynamoDB.DocumentClient({ region: "eu-central-1" })
 
-export async function createProduct(event: HttpRequest): Promise<HttpResponse> {
+export async function handler(event: HttpRequest): Promise<HttpResponse> {
   const form: CreateProduct = JSON.parse(event.body)
   const validationErr = validateCreateProduct(form)
 
@@ -19,12 +19,13 @@ export async function createProduct(event: HttpRequest): Promise<HttpResponse> {
   const params = {
     TableName: process.env.PRODUCTS_TABLE!,
     Item: {
-      id: uuid.v4(),
+      productId: form.productId,
       name: form.name,
       description: form.description,
       price: form.price,
       stock: form.stock,
-      category: form.category
+      category: form.category,
+      picture: form.picture
     }
   }
 

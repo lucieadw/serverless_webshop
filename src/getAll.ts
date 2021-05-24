@@ -3,7 +3,7 @@ import { HttpResponse } from './http'
 
 const ddb = new DynamoDB.DocumentClient({ region: "eu-central-1" })
 
-export async function getProducts(): Promise<HttpResponse> {
+export async function handler(): Promise<HttpResponse> {
   const params = {
     TableName: process.env.PRODUCTS_TABLE!
   }
@@ -12,6 +12,10 @@ export async function getProducts(): Promise<HttpResponse> {
     const data = await ddb.scan(params).promise()
     return {
       statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true,
+      },
       body: JSON.stringify(data.Items)
     }
   } catch (err) {

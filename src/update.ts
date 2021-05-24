@@ -4,7 +4,7 @@ import { HttpRequest, HttpResponse } from './http'
 
 const ddb = new DynamoDB.DocumentClient({ region: "eu-central-1" })
 
-export async function update(event: HttpRequest): Promise<HttpResponse> {
+export async function handler(event: HttpRequest): Promise<HttpResponse> {
   const form: CreateProduct = JSON.parse(event.body)
   const validationErr = validateCreateProduct(form)
 
@@ -18,18 +18,22 @@ export async function update(event: HttpRequest): Promise<HttpResponse> {
   const params = {
     TableName: process.env.PRODUCTS_TABLE!,
     Key: {
-      id: event.pathParameters.id,
+      category: event.pathParameters.category,
+      productId: event.pathParameters.id
     },
-    UpdateExpression: "set #name=:n, description=:d, price=:p, stock=:s, category=:c",
+    UpdateExpression: "set productId=:pId, #name=:n, description=:d, price=:p, stock=:s, category=:c, picture=:pic",
     ExpressionAttributeNames: {
       '#name': 'name'
     },
     ExpressionAttributeValues: {
+      ":pId": form.productId,
       ":n": form.name,
       ":d": form.description,
       ":p": form.price,
       ":s": form.stock,
-      ":c": form.category
+      ":c": form.category,
+      ":pic": form.picture
+
     },
     ReturnValues: "ALL_NEW"
   }

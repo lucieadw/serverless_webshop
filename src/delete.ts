@@ -3,11 +3,12 @@ import { HttpRequest, HttpResponse } from './http'
 
 const ddb = new DynamoDB.DocumentClient({ region: "eu-central-1" })
 
-export async function deleteById(event: HttpRequest): Promise<HttpResponse> {
+export async function handler(event: HttpRequest): Promise<HttpResponse> {
   const params = {
     TableName: process.env.PRODUCTS_TABLE!,
     Key: {
-      id: event.pathParameters.id,
+      category: event.pathParameters.category,
+      productId: event.pathParameters.id
     },
   }
 
