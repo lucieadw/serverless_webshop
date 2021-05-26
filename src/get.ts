@@ -17,6 +17,10 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
     if (data.Item) {
       return {
         statusCode: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Credentials': true,
+        },
         body: JSON.stringify(data.Item)
       }
     }

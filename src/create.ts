@@ -33,6 +33,10 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
     await ddb.put(params).promise()
     return {
       statusCode: 201,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true,
+      },
       body: JSON.stringify(params.Item)
     }
   } catch (err) {

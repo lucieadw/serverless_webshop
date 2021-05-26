@@ -16,6 +16,10 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
     await ddb.delete(params).promise()
     return {
       statusCode: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true,
+      },
       body: "Item deleted"
     }
   } catch (err) {
