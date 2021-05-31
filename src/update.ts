@@ -1,12 +1,12 @@
 import { DynamoDB } from 'aws-sdk';
-import { CreateProduct, validateCreateProduct } from './forms';
+import { CreateProduct, validateUpdateProduct } from './forms';
 import { HttpRequest, HttpResponse } from './http'
 
 const ddb = new DynamoDB.DocumentClient({ region: "eu-central-1" })
 
 export async function handler(event: HttpRequest): Promise<HttpResponse> {
   const form: CreateProduct = JSON.parse(event.body)
-  const validationErr = validateCreateProduct(form)
+  const validationErr = validateUpdateProduct(form)
 
   if (validationErr) {
     return {
@@ -21,17 +21,15 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
       category: event.pathParameters.category,
       productId: event.pathParameters.id
     },
-    UpdateExpression: "set productId=:pId, #name=:n, description=:d, price=:p, stock=:s, category=:c, picture=:pic",
+    UpdateExpression: "set #name=:n, description=:d, price=:p, stock=:s, picture=:pic",
     ExpressionAttributeNames: {
       '#name': 'name'
     },
     ExpressionAttributeValues: {
-      ":pId": form.productId,
       ":n": form.name,
       ":d": form.description,
       ":p": form.price,
       ":s": form.stock,
-      ":c": form.category,
       ":pic": form.picture
 
     },
