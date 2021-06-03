@@ -27,6 +27,7 @@ provider:
   region: eu-central-1
   environment:
     PRODUCTS_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+    BASKET_TABLE: Basket-${opt:stage, self:provider.stage}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -36,11 +37,19 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.PRODUCTS_TABLE}"
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/*"
+
+
+custom:
+  cognitoAuthorizer:
+    arn: arn:aws:cognito-idp:eu-central-1:243037674803:userpool/eu-central-1_vyUSmnSNn
+    scopes:
+      - openid
 
 functions:
+  ######### Products #############
   getAll:
-    handler: src/getAll.handler
+    handler: src/products/getAll.handler
     events:
       - http:
           path: products
@@ -48,7 +57,7 @@ functions:
           cors: true
 
   create:
-    handler: src/create.handler
+    handler: src/products/create.handler
     events:
       - http:
           path: products
@@ -56,7 +65,7 @@ functions:
           cors: true
 
   get:
-    handler: src/get.handler
+    handler: src/products/get.handler
     events:
       - http:
           path: products/{category}/{id}
@@ -64,7 +73,7 @@ functions:
           cors: true
 
   getCategory:
-    handler: src/getCategory.handler
+    handler: src/products/getCategory.handler
     events:
       - http:
           path: products/{category}
@@ -72,7 +81,7 @@ functions:
           cors: true
 
   delete:
-    handler: src/delete.handler
+    handler: src/products/delete.handler
     events:
       - http:
           path: products/{category}/{id}
@@ -80,7 +89,7 @@ functions:
           cors: true
   
   update:
-    handler: src/update.handler
+    handler: src/products/update.handler
     events:
       - http:
           path: products/{category}/{id}
@@ -88,7 +97,7 @@ functions:
           cors: true
           
   populate:
-    handler: src/generator.populate
+    handler: src/products/generator.populate
     timeout: 30
     events:
       - http:
@@ -96,6 +105,32 @@ functions:
           method: post
           cors: true
 
+######### Shopping Basket #############
+  createBasket:
+    handler: src/basket/createBasket.handler
+    events:
+      - http:
+          path: basket
+          method: post
+          cors: true
+  getBasket:
+    handler: src/basket/getBasket.handler
+    events:
+      - http:
+          path: basket
+          method: get
+          authorizer: ${self:custom.cognitoAuthorizer}
+          cors: true
+  updateBasket:
+    handler: src/basket/updateBasket.handler
+    events:
+      - http:
+          path: basket
+          method: put #obj mit productID und anzahl (wenn anz. 0 -> produkt weg)
+          authorizer: ${self:custom.cognitoAuthorizer}
+          cors: true
+  
+        
 resources:
   Resources:
     Products:
@@ -120,5 +155,22 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
         TableName: ${self:provider.environment.PRODUCTS_TABLE}
+    Basket:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: userId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.BASKET_TABLE}
+
 plugins:
   - serverless-plugin-typescript

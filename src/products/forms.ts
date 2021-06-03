@@ -8,6 +8,16 @@ export interface CreateProduct {
   picture: string
 }
 
+export interface Product {
+  category: string  //sort key
+  productId: string //partition key
+  name: string
+  description: string
+  price: number
+  stock: number
+  picture: string
+}
+
 export function validateCreateProduct(form: CreateProduct): string | undefined {
   if (!form.productId || typeof form.productId !== 'string') {
     return "ProductID must be type string and cannot be null"

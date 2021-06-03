@@ -1,6 +1,6 @@
 import { DynamoDB } from 'aws-sdk';
 import { CreateProduct, validateUpdateProduct } from './forms';
-import { HttpRequest, HttpResponse } from './http'
+import { HttpRequest, HttpResponse } from '../http'
 
 const ddb = new DynamoDB.DocumentClient({ region: "eu-central-1" })
 

@@ -1,5 +1,5 @@
 import { DynamoDB } from 'aws-sdk';
-import { HttpResponse } from './http'
+import { HttpResponse } from '../http'
 
 const ddb = new DynamoDB.DocumentClient({ region: "eu-central-1" })
 
