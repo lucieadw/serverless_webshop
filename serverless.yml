@@ -44,6 +44,7 @@ custom:
   cognitoAuthorizer:
     arn: arn:aws:cognito-idp:eu-central-1:243037674803:userpool/eu-central-1_vyUSmnSNn
     scopes:
+      - aws.cognito.signin.user.admin
       - openid
 
 functions:
@@ -125,11 +126,18 @@ functions:
     handler: src/basket/updateBasket.handler
     events:
       - http:
-          path: basket
+          path: basket/update
           method: put #obj mit productID und anzahl (wenn anz. 0 -> produkt weg)
           authorizer: ${self:custom.cognitoAuthorizer}
           cors: true
-  
+  addToBasket:
+    handler: src/basket/addToBasket.handler
+    events:
+      - http:
+          path: basket/add
+          method: put
+          authorizer: ${self:custom.cognitoAuthorizer}
+          cors: true
         
 resources:
   Resources:

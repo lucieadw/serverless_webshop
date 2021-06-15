@@ -1,5 +1,6 @@
 import { DynamoDB } from 'aws-sdk';
 import { HttpRequest, HttpResponse } from '../http'
+import { Product } from '../products/forms';
 import { Basket, BasketProduct, validateBasketProduct } from './forms';
 
 const ddb = new DynamoDB.DocumentClient({ region: "eu-central-1" })
@@ -29,6 +30,8 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
     ReturnValues: "ALL_NEW"
   }
 
+  const enrichedBasket = await enrichBasket(updatedBasket)
+  
   try {
     const data = await ddb.update(params).promise()
     if (data.Attributes) {
@@ -36,9 +39,9 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
         statusCode: 200,
         headers: {
           'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Credentials': true,
+          'Access-Control-Allow-Credentials': 'true',
         },
-        body: JSON.stringify(data.Attributes)
+        body: JSON.stringify(enrichedBasket)
       }
     }
     return {
@@ -51,6 +54,14 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
       body: "Internal Server Error Oops: " + err
     }
   }
+}
+
+async function enrichBasket(basket: Basket): Promise<Basket> {
+  basket.products = await Promise.all(basket.products.map(async basketProduct => {
+    const product = await getWholeProduct(basketProduct.category, basketProduct.productId) //product aus der db holen
+    return { ...basketProduct, ...product }
+  })) //baut aus den beiden ein neues kombiniertes objekt
+  return basket
 }
 
 async function updateBasket(id: string, product: BasketProduct): Promise<Basket> {
@@ -72,4 +83,23 @@ async function updateBasket(id: string, product: BasketProduct): Promise<Basket>
     basket.products.push(product)
   }
   return basket
+}
+
+async function getWholeProduct(category: string, pId: string): Promise<Product> {
+  const params = {
+    TableName: process.env.PRODUCTS_TABLE!,
+    Key: {
+      category: category,
+      productId: pId
+    },
+  }
+  try {
+    const data = await ddb.get(params).promise()
+    if (data.Item) {
+      return data.Item as Product
+    }
+  } catch (err) {
+    console.error(err)
+  }
+  return {} as Product
 }

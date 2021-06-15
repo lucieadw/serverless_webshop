@@ -25,7 +25,7 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
         statusCode: 200,
         headers: {
           'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Credentials': true,
+          'Access-Control-Allow-Credentials': 'true',
         },
         body: JSON.stringify(basket) //das geht dann mit den fehlenden productinfos ans frontend und dann kann dieses den warenorb richtig anzeigen
       }
