@@ -28,6 +28,7 @@ provider:
   environment:
     PRODUCTS_TABLE: ${self:service}-${opt:stage, self:provider.stage}
     BASKET_TABLE: Basket-${opt:stage, self:provider.stage}
+    ORDERS_TABLE: Orders-${opt:stage, self:provider.stage}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -48,7 +49,7 @@ custom:
       - openid
 
 functions:
-  ######### Products #############
+ ############################## Products ##############################
   getAll:
     handler: src/products/getAll.handler
     events:
@@ -106,7 +107,7 @@ functions:
           method: post
           cors: true
 
-######### Shopping Basket #############
+############################## Shopping Basket ##############################
   createBasket:
     handler: src/basket/createBasket.handler
     events:
@@ -138,7 +139,40 @@ functions:
           method: put
           authorizer: ${self:custom.cognitoAuthorizer}
           cors: true
-        
+############################## Order Management ##############################
+  createOrder:
+    handler: src/orders/createOrder.handler
+    events:
+      - http:
+          path: orders
+          method: post
+          authorizer: ${self:custom.cognitoAuthorizer}
+          cors: true
+  deleteOrder:
+    handler: src/orders/deleteOrder.handler
+    events:
+      - http:
+          path: orders/{orderNo}
+          method: delete
+          authorizer: ${self:custom.cognitoAuthorizer}
+          cors: true        
+  getOrder:
+    handler: src/orders/getOrder.handler
+    events:
+      - http:
+          path: orders/{orderNo}
+          method: get
+          authorizer: ${self:custom.cognitoAuthorizer}
+          cors: true
+  getAllOrders:
+    handler: src/orders/getAllOrders.handler
+    events:
+      - http:
+          path: orders
+          method: get
+          authorizer: ${self:custom.cognitoAuthorizer}
+          cors: true
+#---------------------------- Resources (Tables) ----------------------------# 
 resources:
   Resources:
     Products:
@@ -179,6 +213,27 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
         TableName: ${self:provider.environment.BASKET_TABLE}
-
+    Orders:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: userId
+            AttributeType: S
+          -
+            AttributeName: orderNo
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: userId
+            KeyType: HASH
+          -
+            AttributeName: orderNo
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.ORDERS_TABLE}
 plugins:
   - serverless-plugin-typescript
