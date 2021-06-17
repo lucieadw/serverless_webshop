@@ -1,51 +1,100 @@
 import { DynamoDB } from 'aws-sdk';
-import { HttpRequest, HttpResponse } from '../http'
+import { Category } from 'aws-sdk/clients/signer';
 
-import { CreateOrder, validateOrder } from './forms';
+import { SqsEvent } from '../sqs';
+import { Order, OrderProduct, Product } from './forms';
 
 const ddb = new DynamoDB.DocumentClient({ region: "eu-central-1" })
-const { v4: uuidv4 } = require('uuid');
 
-export async function handler(event: HttpRequest): Promise<HttpResponse> {
-  const form: CreateOrder = JSON.parse(event.body)
-  const validationErr = validateOrder(form)
-
-  if (validationErr) {
-    return {
-      statusCode: 400,
-      body: validationErr
-    }
-  }
+export async function handler(event: SqsEvent) {
+  const [{ body }] = event.Records
+  const order = JSON.parse(body) as Order
 
   const params = {
     TableName: process.env.ORDERS_TABLE!,
     Item: {
-      userId: event.requestContext.authorizer.claims.username,
-      orderNo: uuidv4(),
-      name: form.name,
-      email: form.email,
-      street: form.street,
-      housenr: form.housenr,
-      postcode: form.postcode,
-      sum: form.sum,
-      products: form.products
+      userId: order.userId,
+      orderNo: order.orderNo,
+      name: order.name,
+      email: order.email,
+      street: order.street,
+      housenr: order.housenr,
+      postcode: order.postcode,
+      sum: order.sum,
+      products: order.products
     }
   }
 
-  try {
-    await ddb.put(params).promise()
-    return {
-      statusCode: 201,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Credentials': 'true',
-      },
-      body: JSON.stringify(params.Item)
+  // Validate order (check stock etc.)
+  const promAry = await Promise.all(order.products.map(p => checkStock(p.category, p.productId, p.amount)))
+  const allAvailable = promAry.every(e => e === true)
+
+  if (allAvailable) {
+    try {
+      await ddb.put(params).promise()
+      //update stock
+      await updateStock(order.products)
+      //send order confirming e-mail to customer
+      await emptyBasket(order.userId)
+    } catch (err) {
+      console.log(err)
+      //send apologizing e-mail to customer (due to internal failure)
     }
-  } catch (err) {
-    return {
-      statusCode: err.statusCode || 500,
-      body: "Internal Server Error Oops: " + err
-    }
+  } else {
+    console.log('Out of Stock')
+    // send apologizing e-mail to customer (out of stock)
   }
+}
+
+export async function checkStock(category: Category, productId: string, amount: number): Promise<boolean> {
+  const params = {
+    TableName: process.env.PRODUCTS_TABLE!,
+    Key: {
+      category: category,
+      productId: productId
+    },
+  }
+  const data = await ddb.get(params).promise()
+  //if((data.Item.stock - amount) <= 0){
+  //alert: reorder neccecary
+  //}
+  if (data.Item.stock >= amount) {
+    return true
+  } else {
+    return false
+  }
+}
+
+export async function emptyBasket(userId: string): Promise<any> {
+  const params = {
+    TableName: process.env.BASKET_TABLE!,
+    Key: {
+      userId: userId
+    },
+    UpdateExpression: "set products=:p",
+    ExpressionAttributeValues: {
+      ":p": [],
+    },
+    ReturnValues: "ALL_NEW"
+  }
+  return ddb.update(params).promise()
+}
+
+export async function updateStock(products: OrderProduct[]): Promise<any> {
+  return Promise.all(products.map(p => {
+    const params = {
+      TableName: process.env.PRODUCTS_TABLE!,
+      Key: {
+        category: p.category,
+        productId: p.productId
+      },
+      UpdateExpression: "set stock=stock-:a",
+      ExpressionAttributeValues: {
+        ":a": p.amount,
+
+      },
+      ReturnValues: "UPDATED_NEW"
+    }
+    return ddb.update(params).promise()
+  }))
 }

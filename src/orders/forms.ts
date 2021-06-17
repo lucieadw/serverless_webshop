@@ -4,11 +4,18 @@ export interface OrderProduct {
   name: string
   description: string
   price: number
-  stock: number
   picture: string
   amount: number
 }
 
+export interface Product {
+  category: string  //sort key
+  productId: string //partition key
+  name: string
+  description: string
+  price: number
+  picture: string
+}
 
 export interface Order {
   userId: string //sort key
@@ -22,7 +29,7 @@ export interface Order {
   sum: number
 }
 
-export interface CreateOrder {
+export interface CreateOrderRequest {
   name: string
   email: string
   street: string
@@ -33,7 +40,7 @@ export interface CreateOrder {
 }
 
 
-export function validateOrder(form: CreateOrder): string | undefined {
+export function validateOrderRequest(form: CreateOrderRequest): string | undefined {
   if (!form.name || typeof form.name !== 'string') {
     return "Name must be type string and cannot be null"
   }

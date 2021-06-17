@@ -32,6 +32,10 @@ provider:
   iamRoleStatements:
     - Effect: Allow
       Action:
+        - sqs:*
+      Resource: "*"
+    - Effect: Allow
+      Action:
         - dynamodb:Query
         - dynamodb:Scan
         - dynamodb:GetItem
@@ -140,8 +144,8 @@ functions:
           authorizer: ${self:custom.cognitoAuthorizer}
           cors: true
 ############################## Order Management ##############################
-  createOrder:
-    handler: src/orders/createOrder.handler
+  createOrderRequest:
+    handler: src/orders/createOrderRequest.handler
     events:
       - http:
           path: orders
@@ -172,9 +176,22 @@ functions:
           method: get
           authorizer: ${self:custom.cognitoAuthorizer}
           cors: true
+  createOrder:
+    handler: src/orders/createOrder.handler
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - OrderQueue
+              - Arn
+
 #---------------------------- Resources (Tables) ----------------------------# 
 resources:
   Resources:
+    OrderQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "OrderQueue"
     Products:
       Type: 'AWS::DynamoDB::Table'
       DeletionPolicy: Retain

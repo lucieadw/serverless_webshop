@@ -1,5 +1,5 @@
 import { DynamoDB } from 'aws-sdk';
-import { Product } from '../products/forms';
+import { Product } from '../orders/forms';
 import { HttpRequest, HttpResponse } from '../http'
 import { Basket } from './forms';
 
