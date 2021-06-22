@@ -28,8 +28,8 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
       email: form.email,
       street: form.street,
       housenr: form.housenr,
+      city: form.city,
       postcode: form.postcode,
-      sum: form.sum,
       products: form.products
     }),
     QueueUrl: `https://sqs.eu-central-1.amazonaws.com/${accountId}/${queueName}`
@@ -56,6 +56,6 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Credentials': 'true',
     },
-    body: 'Order abgelegt'
+    body: 'Order abgelegt, status pending'
   }
 }

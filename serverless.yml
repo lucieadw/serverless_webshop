@@ -152,14 +152,14 @@ functions:
           method: post
           authorizer: ${self:custom.cognitoAuthorizer}
           cors: true
-  deleteOrder:
-    handler: src/orders/deleteOrder.handler
+  cancelOrder:
+    handler: src/orders/cancelOrder.handler
     events:
       - http:
           path: orders/{orderNo}
           method: delete
           authorizer: ${self:custom.cognitoAuthorizer}
-          cors: true        
+          cors: true       
   getOrder:
     handler: src/orders/getOrder.handler
     events:

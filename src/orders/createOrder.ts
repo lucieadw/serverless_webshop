@@ -2,13 +2,16 @@ import { DynamoDB } from 'aws-sdk';
 import { Category } from 'aws-sdk/clients/signer';
 
 import { SqsEvent } from '../sqs';
-import { Order, OrderProduct, Product } from './forms';
+import { Order, OrderProduct, OrderStatus } from './forms';
 
 const ddb = new DynamoDB.DocumentClient({ region: "eu-central-1" })
 
 export async function handler(event: SqsEvent) {
   const [{ body }] = event.Records
   const order = JSON.parse(body) as Order
+
+  const sumAry: number[] = await Promise.all(order.products.map(p => calcPriceSum(p)))
+  const sum: number = sumAry.reduce((a, p) => a + p, 0)
 
   const params = {
     TableName: process.env.ORDERS_TABLE!,
@@ -19,9 +22,11 @@ export async function handler(event: SqsEvent) {
       email: order.email,
       street: order.street,
       housenr: order.housenr,
+      city: order.city,
       postcode: order.postcode,
-      sum: order.sum,
-      products: order.products
+      sum: sum,
+      products: order.products,
+      orderStatus: OrderStatus.Confirmed
     }
   }
 
@@ -42,8 +47,23 @@ export async function handler(event: SqsEvent) {
     }
   } else {
     console.log('Out of Stock')
+    //change status from confirmed to 
+    params.Item.orderStatus = OrderStatus.OutOfStock
+    await ddb.put(params).promise()
     // send apologizing e-mail to customer (out of stock)
   }
+}
+
+export async function calcPriceSum(p: OrderProduct): Promise<number> {
+  const params = {
+    TableName: process.env.PRODUCTS_TABLE!,
+    Key: {
+      category: p.category,
+      productId: p.productId
+    },
+  }
+  const data = await ddb.get(params).promise()
+  return data.Item.price * p.amount
 }
 
 export async function checkStock(category: Category, productId: string, amount: number): Promise<boolean> {

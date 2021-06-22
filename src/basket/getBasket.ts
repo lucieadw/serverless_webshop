@@ -19,7 +19,17 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
       const basket = data.Item as Basket
       basket.products = await Promise.all(basket.products.map(async basketProduct => {
         const product = await getWholeProduct(basketProduct.category, basketProduct.productId) //product aus der db holen
-        return { ...basketProduct, ...product } //baut aus den beiden ein neues kombiniertes objekt
+        const combined = { ...basketProduct, ...product } 
+        //stock soll nicht mit in Basket+Order stehen
+        return {
+          category: combined.category,
+          productId: combined.productId,
+          name: combined.name,
+          description: combined.description,
+          price: combined.price,
+          picture: combined.picture,
+          amount: combined.amount
+        } //baut aus den beiden ein neues kombiniertes objekt
       }))
       return {
         statusCode: 200,
