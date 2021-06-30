@@ -3,7 +3,7 @@ import { HttpRequest, HttpResponse } from '../http'
 
 const ddb = new DynamoDB.DocumentClient({ region: "eu-central-1" })
 
-export async function populate(event: HttpRequest): Promise<HttpResponse> {
+export async function handler(event: HttpRequest): Promise<HttpResponse> {
   const body = JSON.parse(event.body)
 
   const amount = body.amount

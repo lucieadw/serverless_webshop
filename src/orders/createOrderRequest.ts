@@ -5,9 +5,6 @@ import { CreateOrderRequest, validateOrderRequest } from './forms';
 // Create SQS service client
 const sqs = new SQS({ apiVersion: '2012-11-05' });
 
-const accountId = '243037674803';
-const queueName = 'OrderQueue';
-
 export async function handler(event: HttpRequest): Promise<HttpResponse> {
   const form: CreateOrderRequest = JSON.parse(event.body)
   const validationErr = validateOrderRequest(form)
@@ -32,7 +29,7 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
       postcode: form.postcode,
       products: form.products
     }),
-    QueueUrl: `https://sqs.eu-central-1.amazonaws.com/${accountId}/${queueName}`
+    QueueUrl: process.env.ORDER_QUEUE_URL
   }
 
   try {
