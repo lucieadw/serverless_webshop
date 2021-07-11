@@ -1,42 +1,59 @@
 import * as cdk from '@aws-cdk/core';
-import * as cognito from '@aws-cdk/aws-cognito';
-import * as sqs from '@aws-cdk/aws-sqs';
+import * as sns from '@aws-cdk/aws-sns';
+import * as dynamodb from "@aws-cdk/aws-dynamodb";
 
 export class BaseStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const userPool = new cognito.UserPool(this, 'UserPool', {
-      userPoolName: 'WebshopUserPool',
-      signInCaseSensitive: false,
-      signInAliases: { email: true }
-    })
-    new cdk.CfnOutput(this, 'UserPoolArn', {
-      exportName: 'UserPoolArn',
-      value: userPool.userPoolArn
+    const orderRequestTopic = new sns.Topic(this, 'OrderRequestTopic')
+    new cdk.CfnOutput(this, 'OrderRequestTopicArn', {
+      exportName: 'OrderRequestTopicArn',
+      value: orderRequestTopic.topicArn
     })
 
-    new cognito.UserPoolClient(this, 'UserPoolClient', {
-      userPool,
-      userPoolClientName: 'FrontendClient',
-      generateSecret: false,
-      authFlows: { userSrp: true },
-      supportedIdentityProviders: [cognito.UserPoolClientIdentityProvider.COGNITO],
-      preventUserExistenceErrors: true,
-      oAuth: {
-        flows: { authorizationCodeGrant: true },
-        scopes: [cognito.OAuthScope.COGNITO_ADMIN, cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL]
+    const productsTable = new dynamodb.Table(this, 'ProductTable', {
+      tableName: 'ProductTable',
+      partitionKey: {
+        name: 'category',
+        type: dynamodb.AttributeType.STRING
+      },
+      sortKey: {
+        name: 'productId',
+        type: dynamodb.AttributeType.STRING
       }
     })
-
-    const orderReqQueue = new sqs.Queue(this, 'OrderRequestQueue')
-    new cdk.CfnOutput(this, 'OrderRequestQueueUrl', {
-      exportName: 'OrderRequestQueueUrl',
-      value: orderReqQueue.queueUrl
+    new cdk.CfnOutput(this, 'ProductTableArn', {
+      exportName: 'ProductTableArn',
+      value: productsTable.tableArn
     })
-    new cdk.CfnOutput(this, 'OrderRequestQueueArn', {
-      exportName: 'OrderRequestQueueArn',
-      value: orderReqQueue.queueArn
+
+    const basketTable = new dynamodb.Table(this, 'BasketTable', {
+      tableName: 'BasketTable',
+      partitionKey: {
+        name: 'userId',
+        type: dynamodb.AttributeType.STRING
+      }
+    })
+    new cdk.CfnOutput(this, 'BasketTableArn', {
+      exportName: 'BasketTableArn',
+      value: basketTable.tableArn
+    })
+
+    const ordersTable = new dynamodb.Table(this, 'OrderTable', {
+      tableName: 'OrderTable',
+      partitionKey: {
+        name: 'userId',
+        type: dynamodb.AttributeType.STRING
+      },
+      sortKey: {
+        name: 'orderNo',
+        type: dynamodb.AttributeType.STRING
+      }
+    })
+    new cdk.CfnOutput(this, 'OrderTableArn', {
+      exportName: 'OrderTableArn',
+      value: ordersTable.tableArn
     })
   }
 }

@@ -17,24 +17,13 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
     }
   }
 
-  const updatedBasket = await updateBasket(event.requestContext.authorizer.claims.username, basketProduct)
-
-  const params = {
-    TableName: process.env.BASKET_TABLE!,
-    Key: {
-      userId: event.requestContext.authorizer.claims.username
-    },
-    UpdateExpression: "set products=:p",
-    ExpressionAttributeValues: {
-      ":p": updatedBasket.products,
-    },
-    ReturnValues: "ALL_NEW"
-  }
-
-  const enrichedBasket = await enrichBasket(updatedBasket)
-  
   try {
-    const data = await ddb.update(params).promise()
+    const updatedBasket = await updateBasket(event.pathParameters['userId'], basketProduct)
+    const params = {
+      TableName: process.env.BASKET_TABLE!,
+      Item: updatedBasket
+    }
+    const data = await ddb.put(params).promise()
     if (data.Attributes) {
       return {
         statusCode: 200,
@@ -42,7 +31,7 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Credentials': 'true',
         },
-        body: JSON.stringify(enrichedBasket)
+        body: JSON.stringify(await enrichBasket(updatedBasket))
       }
     }
     return {
@@ -60,7 +49,7 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
 async function enrichBasket(basket: Basket): Promise<Basket> {
   basket.products = await Promise.all(basket.products.map(async basketProduct => {
     const product = await getWholeProduct(basketProduct.category, basketProduct.productId) //product aus der db holen
-    const combined = { ...basketProduct, ...product } 
+    const combined = { ...basketProduct, ...product }
     //stock soll nicht mit in Basket+Order stehen
     return {
       category: combined.category,
@@ -75,23 +64,23 @@ async function enrichBasket(basket: Basket): Promise<Basket> {
   return basket
 }
 
-async function updateBasket(id: string, product: BasketProduct): Promise<Basket> {
+async function updateBasket(userId: string, updatedProduct: BasketProduct): Promise<Basket> {
   const params = {
     TableName: process.env.BASKET_TABLE!,
     Key: {
-      userId: id
+      userId
     }
   }
   const data = await ddb.get(params).promise()
-  const basket = data.Item as Basket
-  const e = basket.products.find(element => element.category === product.category && element.productId === product.productId);
-  if (e) {
-    e.amount = product.amount
-    if (e.amount === 0) {
-      basket.products.splice(basket.products.indexOf(e), 1)
+  const basket = data.Item ? data.Item as Basket : { userId, products: [] }
+  const product = basket.products.find(element => element.category === updatedProduct.category && element.productId === updatedProduct.productId);
+  if (product) {
+    product.amount = updatedProduct.amount
+    if (product.amount === 0) {
+      basket.products.splice(basket.products.indexOf(product), 1)
     }
   } else {
-    basket.products.push(product)
+    basket.products.push(updatedProduct)
   }
   return basket
 }

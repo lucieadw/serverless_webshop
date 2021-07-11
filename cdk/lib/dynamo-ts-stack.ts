@@ -3,73 +3,24 @@ import * as lambda from '@aws-cdk/aws-lambda-nodejs';
 import * as lambdaes from '@aws-cdk/aws-lambda-event-sources';
 import * as api from '@aws-cdk/aws-apigateway';
 import * as iam from '@aws-cdk/aws-iam';
-import * as cognito from '@aws-cdk/aws-cognito';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
-import * as sqs from '@aws-cdk/aws-sqs';
+import * as sns from '@aws-cdk/aws-sns';
 import * as path from 'path';
 
 export class DynamoTsStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const userPool = new cognito.UserPool(this, 'UserPool', {
-      userPoolName: 'WebshopUserPool',
-      signInCaseSensitive: false,
-      signInAliases: { email: true }
-    })
-
-    new cognito.UserPoolClient(this, 'UserPoolClient', {
-      userPool,
-      userPoolClientName: 'FrontendClient',
-      generateSecret: false,
-      authFlows: { userSrp: true },
-      supportedIdentityProviders: [cognito.UserPoolClientIdentityProvider.COGNITO],
-      preventUserExistenceErrors: true,
-      oAuth: {
-        flows: { authorizationCodeGrant: true },
-        scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL]
-      }
-    })
-
-    const orderReqQueue = new sqs.Queue(this, 'OrderRequestQueue')
-
-    const productsTable = new dynamodb.Table(this, 'Products', {
-      tableName: 'Products',
-      partitionKey: {
-        name: 'category',
-        type: dynamodb.AttributeType.STRING
-      },
-      sortKey: {
-        name: 'productId',
-        type: dynamodb.AttributeType.STRING
-      }
-    })
-
-    const basketTable = new dynamodb.Table(this, 'Basket', {
-      tableName: 'Basket',
-      partitionKey: {
-        name: 'userId',
-        type: dynamodb.AttributeType.STRING
-      }
-    })
-
-    const ordersTable = new dynamodb.Table(this, 'Orders', {
-      tableName: 'Orders',
-      partitionKey: {
-        name: 'userId',
-        type: dynamodb.AttributeType.STRING
-      },
-      sortKey: {
-        name: 'orderNo',
-        type: dynamodb.AttributeType.STRING
-      }
-    })
+    const orderTopic = sns.Topic.fromTopicArn(this, 'OrderTopic', cdk.Fn.importValue('OrderRequestTopicArn'))
+    const productsTable = dynamodb.Table.fromTableArn(this, 'ProductTable', cdk.Fn.importValue('ProductTableArn'))
+    const basketTable = dynamodb.Table.fromTableArn(this, 'BasketTable', cdk.Fn.importValue('BasketTableArn'))
+    const ordersTable = dynamodb.Table.fromTableArn(this, 'OrderTable', cdk.Fn.importValue('OrderTableArn'))
 
     const env = {
       'PRODUCTS_TABLE': productsTable.tableName,
       'BASKET_TABLE': basketTable.tableName,
       'ORDERS_TABLE': ordersTable.tableName,
-      'ORDER_QUEUE_URL': orderReqQueue.queueUrl
+      'ORDER_TOPIC': orderTopic.topicName
     }
 
     /////////////////////////////////////////// REST API ///////////////////////////////////////////
@@ -80,35 +31,23 @@ export class DynamoTsStack extends cdk.Stack {
       }
     })
 
-    const authorizer = new api.CognitoUserPoolsAuthorizer(this, 'Authorizer', {
-      cognitoUserPools: [userPool]
-    })
-    const authOpts: api.MethodOptions = {
-      authorizer,
-      authorizationType: api.AuthorizationType.COGNITO,
-      authorizationScopes: ['openid', 'aws.cognito.signin.user.admin']
-    }
-
     //************************ BASKET ************************
-    userPool.addTrigger(cognito.UserPoolOperation.POST_AUTHENTICATION, this.createLambda('CreateBasket', 'basket/createBasket.ts', env))
-    const basketRes = restApi.root.addResource('basket')
-    basketRes.addMethod('get', this.createLambdaInt('GetBasket', 'basket/getBasket.ts', env), authOpts)
-    // basketRes.addMethod('post', this.createLambdaInt('CreateBasket', 'basket/createBasket.ts', env), authOpts)
-    const updateBasketRes = basketRes.addResource('update')
-    updateBasketRes.addMethod('put', this.createLambdaInt('UpdateBasket', 'basket/updateBasket.ts', env), authOpts)
-    const addBasketRes = basketRes.addResource('add')
-    addBasketRes.addMethod('put', this.createLambdaInt('AddToBasket', 'basket/addToBasket.ts', env), authOpts)
+    const basketsRes = restApi.root.addResource('baskets')
+    const basketRes = basketsRes.addResource('{userId}')
+    basketRes.addMethod('get', this.createLambdaInt('GetBasket', 'basket/getBasket.ts', env))
+    basketRes.addResource('update').addMethod('put', this.createLambdaInt('UpdateBasket', 'basket/updateBasket.ts', env))
+    basketRes.addResource('add').addMethod('put', this.createLambdaInt('AddToBasket', 'basket/addToBasket.ts', env))
 
     //************************ ORDERS ************************
     const ordersRes = restApi.root.addResource('orders')
-    ordersRes.addMethod('get', this.createLambdaInt('GetAllOrders', 'orders/getAllOrders.ts', env), authOpts)
-    ordersRes.addMethod('post', this.createLambdaInt('CreateOrderRequest', 'orders/createOrderRequest.ts', env), authOpts)
+    ordersRes.addMethod('get', this.createLambdaInt('GetAllOrders', 'orders/getAllOrders.ts', env))
+    ordersRes.addMethod('post', this.createLambdaInt('CreateOrderRequest', 'orders/createOrderRequest.ts', env))
     const orderNoRes = ordersRes.addResource('{orderNo}')
-    orderNoRes.addMethod('get', this.createLambdaInt('GetOrder', 'orders/getOrder.ts', env), authOpts)
-    orderNoRes.addMethod('delete', this.createLambdaInt('CancelOrder', 'orders/cancelOrder.ts', env), authOpts)
-    // SQS Queue Message
+    orderNoRes.addMethod('get', this.createLambdaInt('GetOrder', 'orders/getOrder.ts', env))
+    orderNoRes.addMethod('delete', this.createLambdaInt('CancelOrder', 'orders/cancelOrder.ts', env))
+    // SNS Topic Message
     const createOrder = this.createLambda('CreateOrder', 'orders/createOrder.ts', env)
-    createOrder.addEventSource(new lambdaes.SqsEventSource(orderReqQueue))
+    createOrder.addEventSource(new lambdaes.SnsEventSource(orderTopic))
 
     //************************ PRODUCTS **********************
     const productsRes = restApi.root.addResource('products')
@@ -123,7 +62,7 @@ export class DynamoTsStack extends cdk.Stack {
 
     //************************ GENERATOR **********************
     const generatorRes = restApi.root.addResource('generator')
-    generatorRes.addMethod('post', this.createLambdaInt('GenerateProducts', 'products/generator.ts', env), authOpts)
+    generatorRes.addMethod('post', this.createLambdaInt('GenerateProducts', 'products/generator.ts', env))
   }
 
   // Integration for APIGATEWAY
@@ -133,12 +72,12 @@ export class DynamoTsStack extends cdk.Stack {
 
   createLambda(name: string, entry: string, environment: { [key: string]: string }): lambda.NodejsFunction {
     const func = new lambda.NodejsFunction(this, name, {
-      entry: path.join(__dirname, `/../../src/${entry}`),
+      entry: path.join(__dirname, `/../../dynamo_ts/src/${entry}`),
       environment
     })
     func.addToRolePolicy(new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
-      actions: ['dynamodb:*', 'sqs:*'],
+      actions: ['dynamodb:*', 'sns:*'],
       resources: ['*']
     }))
     return func

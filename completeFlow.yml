@@ -1,0 +1,27 @@
+config:
+  target: "https://112q6cfx42.execute-api.eu-central-1.amazonaws.com/prod"
+  phases:
+    - duration: 10
+      arrivalRate: 1
+      name: Warm up
+#    - duration: 120
+#      arrivalRate: 1
+#      rampTo: 10
+#      name: Ramp up load
+#    - duration: 300
+#      arrivalRate: 10
+#      name: Sustained load
+
+scenarios:
+  - name: "Buy plant"
+    flow:
+      - get:
+          url: "/products/plant"
+          capture:
+            - json: "$[0].productId"
+              as: "productId"
+      - think: 2
+      - get:
+          url: "/products/plant/{{ productId }}"
+      - think: 2
+      - 

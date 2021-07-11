@@ -15,22 +15,14 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
     }
   }
 
-  const updatedBasket = await addToBasket(event.requestContext.authorizer.claims.username, simpleProduct)
-
-  const params = {
-    TableName: process.env.BASKET_TABLE!,
-    Key: {
-      userId: event.requestContext.authorizer.claims.username
-    },
-    UpdateExpression: "set products=:p",
-    ExpressionAttributeValues: {
-      ":p": updatedBasket.products,
-    },
-    ReturnValues: "ALL_NEW"
-  }
-
+  
   try {
-    const data = await ddb.update(params).promise()
+    const updatedBasket = await addToBasket(event.pathParameters['userId'], simpleProduct)
+    const params = {
+      TableName: process.env.BASKET_TABLE!,
+      Item: updatedBasket
+    }
+    const data = await ddb.put(params).promise()
     if (data.Attributes) {
       return {
         statusCode: 200,
@@ -53,15 +45,15 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
   }
 }
 
-async function addToBasket(id: string, product: SimpleProduct): Promise<Basket> {
+async function addToBasket(userId: string, product: SimpleProduct): Promise<Basket> {
   const params = {
     TableName: process.env.BASKET_TABLE!,
     Key: {
-      userId: id
+      userId
     }
   }
   const data = await ddb.get(params).promise()
-  const basket = data.Item as Basket
+  const basket = data.Item ? data.Item as Basket : { userId, products: [] }
   const e = basket.products.find(element => element.category === product.category && element.productId === product.productId);
   if (e) {
     e.amount = e.amount + 1

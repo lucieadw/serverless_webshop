@@ -2,3 +2,8 @@
 .serverless
 node_modules
 .build
+.idea/
+
+# Gradle
+.gradletasknamecache
+.gradle/
