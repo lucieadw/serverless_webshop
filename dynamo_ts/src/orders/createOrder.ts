@@ -1,15 +1,13 @@
 import { DynamoDB } from 'aws-sdk';
 import { Category } from 'aws-sdk/clients/signer';
 
-import { SqsEvent } from '../sqs';
+import { SnsEvent } from '../sns';
 import { Order, OrderProduct, OrderStatus } from './forms';
 
 const ddb = new DynamoDB.DocumentClient({ region: "eu-central-1" })
 
-export async function handler(event: SqsEvent) {
-  const [{ body }] = event.Records
-  const order = JSON.parse(body) as Order
-
+export async function handler(event: SnsEvent) {
+  const order = JSON.parse(event.Records[0].Sns.Message) as Order
   const sumAry: number[] = await Promise.all(order.products.map(p => calcPriceSum(p)))
   const sum: number = sumAry.reduce((a, p) => a + p, 0)
 
@@ -76,13 +74,9 @@ export async function checkStock(category: Category, productId: string, amount: 
   }
   const data = await ddb.get(params).promise()
   //if((data.Item.stock - amount) <= 0){
-  //alert: reorder neccecary
+  //alert: reorder neccecarys
   //}
-  if (data.Item.stock >= amount) {
-    return true
-  } else {
-    return false
-  }
+  return data.Item.stock >= amount
 }
 
 export async function emptyBasket(userId: string): Promise<any> {

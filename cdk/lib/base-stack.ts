@@ -6,12 +6,6 @@ export class BaseStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const orderRequestTopic = new sns.Topic(this, 'OrderRequestTopic')
-    new cdk.CfnOutput(this, 'OrderRequestTopicArn', {
-      exportName: 'OrderRequestTopicArn',
-      value: orderRequestTopic.topicArn
-    })
-
     const productsTable = new dynamodb.Table(this, 'ProductTable', {
       tableName: 'ProductTable',
       partitionKey: {

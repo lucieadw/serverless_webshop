@@ -10,5 +10,8 @@ deploy-base: clear
 deploy-dynamo-ts: clear
 	cd cdk && cdk deploy DynamoTs
 
+destroy-dynamo-ts: clear
+	cd cdk && cdk destroy DynamoTs
+
 deploy-dynamo-java: clear build-dynamo-java
 	cd cdk && cdk deploy DynamoJava

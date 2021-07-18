@@ -8,6 +8,7 @@
  */
 plugins {
     id 'java'
+    id "io.freefair.lombok" version "6.0.0-m2"
 }
 
 repositories {
@@ -15,6 +16,7 @@ repositories {
 }
 
 dependencies {
+    implementation 'com.amazonaws:aws-java-sdk-sns:1.12.21'
     implementation 'com.amazonaws:aws-lambda-java-core:1.2.1'
     implementation 'com.amazonaws:aws-lambda-java-events:2.2.9'
     implementation 'com.amazonaws:aws-java-sdk-dynamodb:1.12.21'

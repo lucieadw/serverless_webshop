@@ -11,7 +11,7 @@ export class DynamoTsStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const orderTopic = sns.Topic.fromTopicArn(this, 'OrderTopic', cdk.Fn.importValue('OrderRequestTopicArn'))
+    const orderTopic = new sns.Topic(this, 'OrderRequestTopic')
     const productsTable = dynamodb.Table.fromTableArn(this, 'ProductTable', cdk.Fn.importValue('ProductTableArn'))
     const basketTable = dynamodb.Table.fromTableArn(this, 'BasketTable', cdk.Fn.importValue('BasketTableArn'))
     const ordersTable = dynamodb.Table.fromTableArn(this, 'OrderTable', cdk.Fn.importValue('OrderTableArn'))
@@ -20,7 +20,7 @@ export class DynamoTsStack extends cdk.Stack {
       'PRODUCTS_TABLE': productsTable.tableName,
       'BASKET_TABLE': basketTable.tableName,
       'ORDERS_TABLE': ordersTable.tableName,
-      'ORDER_TOPIC': orderTopic.topicName
+      'ORDER_TOPIC': orderTopic.topicArn
     }
 
     /////////////////////////////////////////// REST API ///////////////////////////////////////////
@@ -40,9 +40,10 @@ export class DynamoTsStack extends cdk.Stack {
 
     //************************ ORDERS ************************
     const ordersRes = restApi.root.addResource('orders')
-    ordersRes.addMethod('get', this.createLambdaInt('GetAllOrders', 'orders/getAllOrders.ts', env))
-    ordersRes.addMethod('post', this.createLambdaInt('CreateOrderRequest', 'orders/createOrderRequest.ts', env))
-    const orderNoRes = ordersRes.addResource('{orderNo}')
+    const orderRes = ordersRes.addResource('{userId}')
+    orderRes.addMethod('get', this.createLambdaInt('GetAllOrders', 'orders/getAllOrders.ts', env))
+    orderRes.addMethod('post', this.createLambdaInt('CreateOrderRequest', 'orders/createOrderRequest.ts', env))
+    const orderNoRes = orderRes.addResource('{orderNo}')
     orderNoRes.addMethod('get', this.createLambdaInt('GetOrder', 'orders/getOrder.ts', env))
     orderNoRes.addMethod('delete', this.createLambdaInt('CancelOrder', 'orders/cancelOrder.ts', env))
     // SNS Topic Message

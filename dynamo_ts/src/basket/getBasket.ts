@@ -17,7 +17,7 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
   try {
     const data = await ddb.get(params).promise()
     if (data.Item) {
-      const basket = data.Item as Basket
+      const basket = data.Item ? data.Item as Basket : { userId, products: [] }
       basket.products = await Promise.all(basket.products.map(async basketProduct => {
         const product = await getWholeProduct(basketProduct.category, basketProduct.productId) //product aus der db holen
         const combined = { ...basketProduct, ...product }
@@ -36,22 +36,31 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
         statusCode: 200,
         headers: {
           'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Credentials': 'true',
+          'Access-Control-Allow-Credentials': true,
         },
         body: JSON.stringify(basket) //das geht dann mit den fehlenden productinfos ans frontend und dann kann dieses den warenorb richtig anzeigen
       }
     }
     return {
       statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true,
+      },
       body: JSON.stringify({
         userId,
         products: []
       })
     }
   } catch (err) {
+    console.error(err)
     return {
       statusCode: err.statusCode || 500,
-      body: "Internal Server Error Oops" + err
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true,
+      },
+      body: "Internal Server Error Oops: " + err
     }
   }
 }

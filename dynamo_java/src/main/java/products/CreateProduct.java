@@ -14,10 +14,10 @@ import com.google.gson.Gson;
 import products.forms.CreateProductForm;
 
 public class CreateProduct implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
-    AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
-    DynamoDB dynamoDB = new DynamoDB(client);
 
-    Table table = dynamoDB.getTable(System.getenv("PRODUCTS_TABLE"));
+    private final AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
+    private final DynamoDB dynamoDB = new DynamoDB(client);
+    private final Table table = dynamoDB.getTable(System.getenv("PRODUCTS_TABLE"));
 
     @Override
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent input, Context context) {
@@ -32,7 +32,12 @@ public class CreateProduct implements RequestHandler<APIGatewayProxyRequestEvent
 
         var item = new Item()
                 .withKeyComponent("category", form.getCategory())
-                .withKeyComponent("productId", form.getProductId());
+                .withKeyComponent("productId", form.getProductId())
+                .withString("name", form.getName())
+                .withString("description", form.getDescription())
+                .withString("picture", form.getPicture())
+                .withNumber("price", form.getPrice())
+                .withNumber("stock", form.getStock());
 
         //put product in database
         try {
@@ -41,9 +46,10 @@ public class CreateProduct implements RequestHandler<APIGatewayProxyRequestEvent
                     .withStatusCode(201)
                     .withBody(new Gson().toJson(outcome.getItem().asMap()));
         } catch (Exception ex) {
+            ex.printStackTrace();
             return new APIGatewayProxyResponseEvent()
                     .withStatusCode(500)
-                    .withBody(ex.toString());
+                    .withBody(ex.getMessage());
         }
 
     }

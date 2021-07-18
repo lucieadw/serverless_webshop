@@ -1,6 +1,6 @@
 import { DynamoDB } from 'aws-sdk';
 import { HttpRequest, HttpResponse } from '../http'
-import { Basket, BasketProduct, SimpleProduct, validateSimpleProduct } from './forms';
+import { Basket, SimpleProduct, validateSimpleProduct } from './forms';
 
 const ddb = new DynamoDB.DocumentClient({ region: "eu-central-1" })
 
@@ -11,6 +11,10 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
   if (validationErr) {
     return {
       statusCode: 400,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true,
+      },
       body: validationErr
     }
   }
@@ -23,23 +27,22 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
       Item: updatedBasket
     }
     const data = await ddb.put(params).promise()
-    if (data.Attributes) {
-      return {
-        statusCode: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Credentials': 'true',
-        },
-        body: JSON.stringify(data.Attributes)
-      }
-    }
     return {
-      statusCode: 404,
-      body: "Item not found"
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true,
+      },
+      body: JSON.stringify(data.Attributes)
     }
   } catch (err) {
+    console.error(err)
     return {
       statusCode: err.statusCode || 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true,
+      },
       body: "Internal Server Error Oops: " + err
     }
   }

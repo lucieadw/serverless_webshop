@@ -1,4 +1,5 @@
 import { DynamoDB } from 'aws-sdk';
+import { PutItemInput } from 'aws-sdk/clients/dynamodb';
 import { HttpRequest, HttpResponse } from '../http'
 import { Product } from '../orders/forms';
 
@@ -13,6 +14,10 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
   if (validationErr) {
     return {
       statusCode: 400,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true,
+      },
       body: validationErr
     }
   }
@@ -23,24 +28,23 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
       TableName: process.env.BASKET_TABLE!,
       Item: updatedBasket
     }
-    const data = await ddb.put(params).promise()
-    if (data.Attributes) {
-      return {
-        statusCode: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Credentials': 'true',
-        },
-        body: JSON.stringify(await enrichBasket(updatedBasket))
-      }
-    }
+    await ddb.put(params).promise()
     return {
-      statusCode: 404,
-      body: "Item not found"
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true,
+      },
+      body: JSON.stringify(await enrichBasket(updatedBasket))
     }
   } catch (err) {
+    console.error(err)
     return {
       statusCode: err.statusCode || 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true,
+      },
       body: "Internal Server Error Oops: " + err
     }
   }
@@ -60,7 +64,7 @@ async function enrichBasket(basket: Basket): Promise<Basket> {
       picture: combined.picture,
       amount: combined.amount
     }
-  })) //baut aus den beiden ein neues kombiniertes objekt WIE SOLL STOCK DA RAUS?
+  })) //baut aus den beiden ein neues kombiniertes objekt
   return basket
 }
 
