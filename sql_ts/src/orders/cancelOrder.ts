@@ -1,44 +1,29 @@
-import { DynamoDB } from 'aws-sdk';
 import { HttpRequest, HttpResponse } from '../http'
 import { OrderStatus } from './forms';
+import mysql from 'mysql2'
+import { retry } from '../db/retry';
 
-
-const ddb = new DynamoDB.DocumentClient({ region: "eu-central-1" })
 
 export async function handler(event: HttpRequest): Promise<HttpResponse> {
   const { userId, orderNo } = event.pathParameters
-  const params = {
-    TableName: process.env.ORDERS_TABLE!,
-    Key: {
-      userId,
-      orderNo
-    },
-    UpdateExpression: "set orderStatus=:s",
-    ExpressionAttributeValues: {
-      ":s": OrderStatus.Canceled,
-    },
-    ReturnValues: "ALL_NEW"
-  }
-  
+
+  const conn = mysql.createConnection({
+    host: process.env.DB_URL,
+    port: parseInt(process.env.DB_PORT),
+    user: process.env.DB_USERNAME,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
+  })
+
   try {
-    const data = await ddb.update(params).promise()
-    if (data.Attributes) {
-      return {
-        statusCode: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Credentials': true,
-        },
-        body: 'Order was canceled'
-      }
-    }
+    await conn.promise().query('UPDATE Orders SET OrderStatus = ? WHERE id = ? AND orderNo = ?', [OrderStatus.Canceled, userId, orderNo])
     return {
-      statusCode: 404,
+      statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Credentials': true,
       },
-      body: "Item not found"
+      body: 'Order was canceled'
     }
   } catch (err) {
     return {

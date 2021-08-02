@@ -1,6 +1,4 @@
-import mysql from 'mysql2'
 import { HttpRequest, HttpResponse } from '../http'
-
 
 export async function handler(event: HttpRequest): Promise<HttpResponse> {
   const conn = mysql.createConnection({
@@ -11,7 +9,7 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
     database: process.env.DB_NAME
   })
   try {
-    const [rows, fields] = await conn.promise().query( 'SELECT * FROM Products WHERE category = ? AND productId = ?', [event.pathParameters.category, event.pathParameters.id])
+    const [rows, fields] = await conn.promise().query( 'UPDATE Products SET stock = ? WHERE category = ? AND productId = ? ', [100000, event.pathParameters.category, event.pathParameters.id])
     if (rows[0]) {
       return {
         statusCode: 200,

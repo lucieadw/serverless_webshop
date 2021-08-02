@@ -1,5 +1,4 @@
 import * as cdk from '@aws-cdk/core';
-import * as sns from '@aws-cdk/aws-sns';
 import * as dynamodb from "@aws-cdk/aws-dynamodb";
 
 export class BaseStack extends cdk.Stack {
@@ -15,7 +14,9 @@ export class BaseStack extends cdk.Stack {
       sortKey: {
         name: 'productId',
         type: dynamodb.AttributeType.STRING
-      }
+      },
+      readCapacity: 15,
+      writeCapacity: 1
     })
     new cdk.CfnOutput(this, 'ProductTableArn', {
       exportName: 'ProductTableArn',
@@ -27,7 +28,9 @@ export class BaseStack extends cdk.Stack {
       partitionKey: {
         name: 'userId',
         type: dynamodb.AttributeType.STRING
-      }
+      },
+      readCapacity: 5,
+      writeCapacity: 17
     })
     new cdk.CfnOutput(this, 'BasketTableArn', {
       exportName: 'BasketTableArn',
@@ -43,7 +46,9 @@ export class BaseStack extends cdk.Stack {
       sortKey: {
         name: 'orderNo',
         type: dynamodb.AttributeType.STRING
-      }
+      },
+      readCapacity: 5,
+      writeCapacity: 7
     })
     new cdk.CfnOutput(this, 'OrderTableArn', {
       exportName: 'OrderTableArn',

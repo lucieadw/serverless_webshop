@@ -11,7 +11,7 @@ export async function handler(): Promise<HttpResponse> {
   })
   // fetch items from database
   try {
-    const [rows, fields] = await conn.promise().query('SELECT * from Products')
+    const [rows, fields] = await conn.promise().query( 'SELECT * from Products')
     return {
       statusCode: 200,
       headers: {

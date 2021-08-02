@@ -1,0 +1,97 @@
+config:
+  plugins:
+    uuid:
+      vars: [ 'userId' ] # array of variable names
+      ### Toggle Target ####
+  # target: "https://k577d65461.execute-api.eu-central-1.amazonaws.com/prod" #DynamoTS
+  # target: "https://723t2494u5.execute-api.eu-central-1.amazonaws.com/prod" #DynamoJava
+  target: "https://1gc6d6zwpk.execute-api.eu-central-1.amazonaws.com/prod" #SQLTs
+  http:
+    # Responses have to be sent within 10 seconds, or an `ETIMEDOUT` error gets raised.
+    timeout: 30
+  phases:
+    - duration: 10
+      arrivalRate: 1
+      name: Warm up
+    - duration: 20
+      arrivalRate: 1
+      rampTo: 5
+      name: Ramp up load
+    - duration: 30
+      arrivalRate: 5
+      name: Sustained load
+
+
+scenarios:
+  - name: "Search plant"
+    flow:
+      - options: 
+          url: '/'
+          beforeRequest: addUUID  # request-level hook. each call will reset variable values to a new UUID 
+      - log: "LOG userId"
+      - log: "{{ userId }}"
+      - get:
+          url: "/products/flower"
+      - think: 2
+      - get:
+          url: "/products/edible"
+      - think: 2
+      - get:
+          url: "/products/plant"
+          capture:
+            - json: "$[0].productId"
+              as: "productId"
+            - json: "$[0].category"
+              as: "category"
+      - think: 2
+      - get:
+          url: "/products/plant/{{ productId }}"
+      - think: 2
+      - put:
+          url: "/baskets/{{ userId }}/add" 
+          json:
+            productId: "{{ productId }}"
+            category: "{{ category }}"
+      - think: 2
+      - get:
+          url: "/products/flower"
+          capture:
+            - json: "$[0].productId"
+              as: "productId"
+            - json: "$[0].category"
+              as: "category"
+      - think: 2
+      - put:
+          url: "/baskets/{{ userId }}/add"
+          json:
+            productId: "{{ productId }}"
+            category: "{{ category }}"
+      - think: 2
+      - get:
+          url: "/baskets/{{ userId }}"
+          capture:
+            - json: "$.products"
+              as: "products"
+      - think: 2
+      - post:
+          url: "/orders/{{ userId }}"
+          json:
+            name: "test"
+            email: "test@test.com"
+            street: "teststr."
+            housenr: "1"
+            postcode: "10000"
+            city: "Testburg"
+            products: "{{ products }}"
+      - think: 15
+      - get:
+          url: "/products/edible"
+      - think: 2
+      - get:
+          url: "/orders/{{ userId }}"
+          capture:
+            - json: "$[0].orderNo"
+              as: "orderNo"
+      - think: 2
+      - delete:
+          url: "/orders/{{ userId }}/{{ orderNo }}"

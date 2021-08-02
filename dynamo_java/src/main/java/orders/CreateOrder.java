@@ -16,7 +16,6 @@ import orders.forms.Order;
 import orders.forms.OrderProduct;
 import orders.forms.OrderStatus;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,8 +27,9 @@ public class CreateOrder implements RequestHandler<SNSEvent, Void> {
     @Override
     public Void handleRequest(SNSEvent input, Context context) {
         var order = new Gson().fromJson(input.getRecords().get(0).getSNS().getMessage(), Order.class);
-        var sum = order.getProducts().stream().map(this::calcSum).reduce((float) 0, Float::sum);
-
+        var sum = order.getProducts().stream().map(this::calcSum).reduce(0f, Float::sum);
+        System.out.println(input.getRecords().get(0).getSNS().getMessage());
+        System.out.println(order);
         var item = new Item()
                 .withKeyComponent("orderNo", order.getOrderNo())
                 .withKeyComponent("userId", order.getUserId())
@@ -69,7 +69,8 @@ public class CreateOrder implements RequestHandler<SNSEvent, Void> {
         DynamoDB dynamoDB = new DynamoDB(client);
         Table table = dynamoDB.getTable(System.getenv("BASKET_TABLE"));
 
-        UpdateItemSpec updateItemSpec = new UpdateItemSpec().withPrimaryKey("userId", userId)
+        UpdateItemSpec updateItemSpec = new UpdateItemSpec()
+                .withPrimaryKey("userId", userId)
                 .withReturnValues(ReturnValue.ALL_NEW)
                 .withUpdateExpression("set products=:newVal")
                 .withValueMap(new ValueMap().withList(":newVal", List.of()));
@@ -83,8 +84,7 @@ public class CreateOrder implements RequestHandler<SNSEvent, Void> {
         Table table = dynamoDB.getTable(System.getenv("PRODUCTS_TABLE"));
 
         UpdateItemSpec updateItemSpec = new UpdateItemSpec()
-                .withPrimaryKey("category", p.getCategory())
-                .withPrimaryKey("productId", p.getProductId())
+                .withPrimaryKey("category", p.getCategory(), "productId", p.getProductId())
                 .withReturnValues(ReturnValue.UPDATED_NEW)
                 .withUpdateExpression("set stock=stock-:a")
                 .withValueMap(new ValueMap().withInt(":a", p.getAmount()));

@@ -1,12 +1,20 @@
-import { DynamoDB } from 'aws-sdk';
 import { HttpRequest, HttpResponse } from '../http'
-import { Basket, SimpleProduct, validateSimpleProduct } from './forms';
-
-const ddb = new DynamoDB.DocumentClient({ region: "eu-central-1" })
+import { BasketProduct, SimpleProduct, validateSimpleProduct } from './forms';
+import mysql from 'mysql2'
+import { retry } from '../db/retry';
 
 export async function handler(event: HttpRequest): Promise<HttpResponse> {
   const simpleProduct: SimpleProduct = JSON.parse(event.body)
   const validationErr = validateSimpleProduct(simpleProduct)
+
+  const conn = mysql.createConnection({
+    host: process.env.DB_URL,
+    port: parseInt(process.env.DB_PORT),
+    user: process.env.DB_USERNAME,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
+  })
+
 
   if (validationErr) {
     return {
@@ -19,21 +27,19 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
     }
   }
 
-  
+  const userId = event.pathParameters['userId']
+
   try {
-    const updatedBasket = await addToBasket(event.pathParameters['userId'], simpleProduct)
-    const params = {
-      TableName: process.env.BASKET_TABLE!,
-      Item: updatedBasket
-    }
-    const data = await ddb.put(params).promise()
+    const products = await addToBasket(userId, simpleProduct, conn)
+
+    const [rows, fields] = await conn.promise().query('REPLACE INTO Baskets(id,products) VALUES(?, ?)', [userId, JSON.stringify(products)])
     return {
       statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Credentials': true,
       },
-      body: JSON.stringify(data.Attributes)
+      body: JSON.stringify(rows[0])
     }
   } catch (err) {
     console.error(err)
@@ -48,24 +54,26 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
   }
 }
 
-async function addToBasket(userId: string, product: SimpleProduct): Promise<Basket> {
-  const params = {
-    TableName: process.env.BASKET_TABLE!,
-    Key: {
-      userId
-    }
+async function addToBasket(userId: string, product: SimpleProduct, conn: mysql.Connection): Promise<BasketProduct[]> {
+  let products = null
+  const [rows, fields] = await conn.promise().query('SELECT * from Baskets WHERE id = ?', [userId])
+  console.log('Basket: ')
+  console.log(rows[0])
+  if (rows[0] === undefined) {
+    products = []
+  } else {
+    products =  JSON.parse(rows[0].products)
   }
-  const data = await ddb.get(params).promise()
-  const basket = data.Item ? data.Item as Basket : { userId, products: [] }
-  const e = basket.products.find(element => element.category === product.category && element.productId === product.productId);
+
+  const e = products.find(element => element.category === product.category && element.productId === product.productId);
   if (e) {
     e.amount = e.amount + 1
   } else {
-    basket.products.push({
+    products.push({
       category: product.category,
       productId: product.productId,
       amount: 1
     })
   }
-  return basket
+  return products
 }

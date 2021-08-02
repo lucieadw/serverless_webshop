@@ -74,6 +74,7 @@ export class DynamoTsStack extends cdk.Stack {
   createLambda(name: string, entry: string, environment: { [key: string]: string }): lambda.NodejsFunction {
     const func = new lambda.NodejsFunction(this, name, {
       entry: path.join(__dirname, `/../../dynamo_ts/src/${entry}`),
+      timeout: cdk.Duration.seconds(30),
       environment
     })
     func.addToRolePolicy(new iam.PolicyStatement({

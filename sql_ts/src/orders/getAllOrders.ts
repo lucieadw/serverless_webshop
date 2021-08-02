@@ -1,49 +1,32 @@
-import { DynamoDB } from 'aws-sdk';
 import { HttpRequest, HttpResponse } from '../http'
-
-const ddb = new DynamoDB.DocumentClient({ region: "eu-central-1" })
+import mysql from 'mysql2'
 
 export async function handler(event: HttpRequest): Promise<HttpResponse> {
   const userId = event.pathParameters['userId']
-  const params = {
-    TableName: process.env.ORDERS_TABLE!,
-    KeyConditionExpression: "userId = :userId",
-    ExpressionAttributeValues: {
-      ":userId": userId
-    },
-  }
+
+  const conn = mysql.createConnection({
+    host: process.env.DB_URL,
+    port: parseInt(process.env.DB_PORT),
+    user: process.env.DB_USERNAME,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
+  })
 
   try {
-    const data = await ddb.query(params).promise()
-    if (data.Items) {
-      const order = data.Items
-      return {
-        statusCode: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Credentials': true,
-        },
-        body: JSON.stringify(order)
-      }
-    }
+    const [rows, fields] = await conn.promise().query('SELECT * FROM Orders WHERE id = ?', [userId])
+    console.log(fields)
     return {
-      statusCode: 404,
+      statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Credentials': true,
       },
-      body: "Item not found"
+      body: JSON.stringify(rows)
     }
   } catch (err) {
-    console.error(err)
     return {
       statusCode: err.statusCode || 500,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Credentials': true,
-      },
       body: "Internal Server Error Oops" + err
     }
   }
 }
-

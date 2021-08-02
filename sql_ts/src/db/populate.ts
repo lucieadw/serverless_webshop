@@ -46,11 +46,9 @@ function generate(amount: number, name: string, des: string, cat: string, conn: 
     const price = getRandomPrice()
     const stock = getRandomStock()
 
-    const item = "{name: " + (name + i) + ", description: " + des + ", picture: ''}"
-
     promises.push(conn.promise().query(
-      `INSERT INTO Products VALUES (?, ?, ?, ?, ?);`,
-      [productId, cat, stock, price, item]))
+      `REPLACE INTO Products VALUES (?, ?, ?, ?, ?, ?, ?);`,
+      [productId, cat, stock, price, name + 1, des, '']))
   }
 
   return promises

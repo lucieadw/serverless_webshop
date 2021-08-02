@@ -15,7 +15,7 @@ import java.util.UUID;
 public class CreateOrderRequest implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
     private final AmazonSNS sns = AmazonSNSClientBuilder.standard().build();
-    OrderRequestForm form;
+    private OrderRequestForm form;
 
     @Override
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent input, Context context) {

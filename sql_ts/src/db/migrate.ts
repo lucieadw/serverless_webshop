@@ -12,13 +12,18 @@ export async function handler(): Promise<HttpResponse> {
   })
   try {
     console.log('Creating product table')
+    await conn.promise().query('DROP TABLE Products')
+    await conn.promise().query('DROP TABLE Baskets')
+    await conn.promise().query('DROP TABLE Orders')
     await conn.promise().query(
       `CREATE TABLE Products (
-          productid VARCHAR(11) PRIMARY KEY,
+          productId VARCHAR(11) PRIMARY KEY,
           category VARCHAR(100),
           stock INT,
           price DECIMAL(6, 2),
-          item TEXT
+          name VARCHAR(100),
+          description TEXT,
+          picture VARCHAR(100)
       );`
     )
     console.log('Creating basket table')
@@ -33,10 +38,15 @@ export async function handler(): Promise<HttpResponse> {
       `CREATE TABLE Orders (
         orderNo VARCHAR(100) PRIMARY KEY,
         id VARCHAR(100),
-        orderStatus VARCHAR(50),
-        sum DECIMAL(8, 2),
+        name VARCHAR(50),
+        email VARCHAR(50),
+        street VARCHAR(50),
+        housenr VARCHAR(50),
+        city VARCHAR(50),
+        postcode VARCHAR(50),
         products TEXT,
-        adress TEXT
+        sum DECIMAL(8, 2),
+        orderStatus VARCHAR(50)
       );`
     )
     return {

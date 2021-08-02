@@ -1,7 +1,6 @@
 package orders.forms;
 
 import lombok.Data;
-
 import java.util.Map;
 
 @Data
@@ -21,7 +20,7 @@ public class OrderProduct {
                 "name", name,
                 "description", description,
                 "price", price,
-                "picture", picture,
+                "picture", picture != null ? picture : "",
                 "amount", amount
         );
     }

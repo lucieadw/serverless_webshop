@@ -3,7 +3,7 @@ import { HttpRequest, HttpResponse } from '../http'
 import { v4 as uuidv4 } from 'uuid';
 import { CreateOrderRequest, validateOrderRequest } from './forms';
 // Create SNS service client
-const sns = new SNS();
+const sns = new SNS({ region: 'eu-central-1' });
 
 export async function handler(event: HttpRequest): Promise<HttpResponse> {
   const form: CreateOrderRequest = JSON.parse(event.body)

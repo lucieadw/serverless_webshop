@@ -7,7 +7,6 @@ import * as path from 'path';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as rds from '@aws-cdk/aws-rds';
 import * as sns from '@aws-cdk/aws-sns';
-import { Credentials } from '@aws-cdk/aws-rds';
 
 export class SqlTsStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
@@ -17,13 +16,13 @@ export class SqlTsStack extends cdk.Stack {
 
     const sg = ec2.SecurityGroup.fromSecurityGroupId(this, 'SecGroup', 'sg-ce5657bb')
 
+    //const vpc = ec2.Vpc.fromLookup(this, 'Vpc', { vpcId: 'vpc-11b1d67b' })
     const vpc = ec2.Vpc.fromVpcAttributes(this, 'Vpc', {
       vpcId: 'vpc-11b1d67b',
       privateSubnetIds: ['subnet-66024c0c', 'subnet-51eb6e2d', 'subnet-6b971f27'],
       privateSubnetRouteTableIds: ['rtb-6c574f06', 'rtb-6c574f06', 'rtb-6c574f06'],
       availabilityZones: ['eu-central-1a', 'eu-central-1b', 'eu-central-1c'],
     })
-
     const dbCredentials = {
       username: 'test',
       password: 'test1234',
@@ -74,16 +73,16 @@ export class SqlTsStack extends cdk.Stack {
     basketRes.addResource('add').addMethod('put', this.createLambdaInt('AddToBasket', 'basket/addToBasket.ts', env, vpc, sg))
 
     //************************ ORDERS ************************
-    /*const ordersRes = restApi.root.addResource('orders')
+    const ordersRes = restApi.root.addResource('orders')
     const orderRes = ordersRes.addResource('{userId}')
-    orderRes.addMethod('get', this.createLambdaInt('GetAllOrders', 'orders/getAllOrders.ts', env))
-    orderRes.addMethod('post', this.createLambdaInt('CreateOrderRequest', 'orders/createOrderRequest.ts', env))
+    orderRes.addMethod('get', this.createLambdaInt('GetAllOrders', 'orders/getAllOrders.ts', env, vpc, sg))
+    orderRes.addMethod('post', this.createLambdaInt('CreateOrderRequest', 'orders/createOrderRequest.ts', env, vpc, sg))
     const orderNoRes = orderRes.addResource('{orderNo}')
-    orderNoRes.addMethod('get', this.createLambdaInt('GetOrder', 'orders/getOrder.ts', env))
-    orderNoRes.addMethod('delete', this.createLambdaInt('CancelOrder', 'orders/cancelOrder.ts', env))
+    // orderNoRes.addMethod('get', this.createLambdaInt('GetOrder', 'orders/getOrder.ts', env, vpc, sg))
+    orderNoRes.addMethod('delete', this.createLambdaInt('CancelOrder', 'orders/cancelOrder.ts', env, vpc, sg))
     // SNS Topic Message
-    const createOrder = this.createLambda('CreateOrder', 'orders/createOrder.ts', env)
-    createOrder.addEventSource(new lambdaes.SnsEventSource(orderTopic))*/
+    const createOrder = this.createLambda('CreateOrder', 'orders/createOrder.ts', env, vpc, sg)
+    createOrder.addEventSource(new lambdaes.SnsEventSource(orderTopic))
 
     //************************ PRODUCTS **********************
     const productsRes = restApi.root.addResource('products')
@@ -94,6 +93,7 @@ export class SqlTsStack extends cdk.Stack {
     const prodCatIdRes = prodCatRes.addResource('{id}')
     prodCatIdRes.addMethod('get', this.createLambdaInt('GetProduct', '/products/get.ts', env, vpc, sg))
     prodCatIdRes.addMethod('delete', this.createLambdaInt('DeleteProduct', '/products/delete.ts', env, vpc, sg))
+    prodCatIdRes.addMethod('put', this.createLambdaInt('UpdateProductStock', '/products/updateStock.ts', env, vpc, sg))
     //prodCatIdRes.addMethod('put', this.createLambdaInt('UpdateProduct', '/products/update.ts', env))
   }
   // Integration for APIGATEWAY
