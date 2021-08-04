@@ -5,7 +5,9 @@ config:
       ### Toggle Target ####
   # target: "https://k577d65461.execute-api.eu-central-1.amazonaws.com/prod" #DynamoTS
   # target: "https://723t2494u5.execute-api.eu-central-1.amazonaws.com/prod" #DynamoJava
-  target: "https://1gc6d6zwpk.execute-api.eu-central-1.amazonaws.com/prod" #SQLTs
+  # target: "https://1gc6d6zwpk.execute-api.eu-central-1.amazonaws.com/prod" #SQLTS
+   target: "https://jphtushb33.execute-api.eu-central-1.amazonaws.com/prod" #GoTs
+
   http:
     # Responses have to be sent within 10 seconds, or an `ETIMEDOUT` error gets raised.
     timeout: 30

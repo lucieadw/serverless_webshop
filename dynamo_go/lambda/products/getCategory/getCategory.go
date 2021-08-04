@@ -31,13 +31,13 @@ func Handler(event events.APIGatewayProxyRequest) (*events.APIGatewayProxyRespon
 	}
 
 	if len(out.Items) > 0 {
-		var products []*forms.Product
-		for _, i := range out.Items {
-			var product forms.Product
-			if err := dynamodbattribute.UnmarshalMap(i, &product); err != nil {
+		products := make([]*forms.Product, len(out.Items))
+		for i, item := range out.Items {
+			product := new(forms.Product)
+			if err := dynamodbattribute.UnmarshalMap(item, product); err != nil {
 				return apigw.CreateResponse(500, err.Error()), err
 			}
-			products = append(products, &product)
+			products[i] = product
 		}
 
 		jsonStr, err := json.Marshal(products)

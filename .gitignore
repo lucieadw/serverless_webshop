@@ -2,8 +2,16 @@
 .serverless
 node_modules
 .build
-.idea/
+build
+.idea
 
 # Gradle
 .gradletasknamecache
-.gradle/
+.gradle
+cdk.out
+/dynamo_go/bin
+/dynamo_java/bin
+.settings
+.project
+.classpath
+.DS_Store

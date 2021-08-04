@@ -74,7 +74,7 @@ export async function checkStock(category: Category, productId: string, amount: 
   }
   const data = await ddb.get(params).promise()
   //if((data.Item.stock - amount) <= 0){
-  //alert: reorder neccecarys
+  //alert: reorder neccecary
   //}
   return data.Item.stock >= amount
 }

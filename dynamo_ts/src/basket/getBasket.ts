@@ -17,7 +17,7 @@ export async function handler(event: HttpRequest): Promise<HttpResponse> {
   try {
     const data = await ddb.get(params).promise()
     if (data.Item) {
-      const basket = data.Item ? data.Item as Basket : { userId, products: [] }
+      const basket = data.Item as Basket
       basket.products = await Promise.all(basket.products.map(async basketProduct => {
         const product = await getWholeProduct(basketProduct.category, basketProduct.productId) //product aus der db holen
         const combined = { ...basketProduct, ...product }
