@@ -28,8 +28,7 @@ public class CreateOrder implements RequestHandler<SNSEvent, Void> {
     public Void handleRequest(SNSEvent input, Context context) {
         var order = new Gson().fromJson(input.getRecords().get(0).getSNS().getMessage(), Order.class);
         var sum = order.getProducts().stream().map(this::calcSum).reduce(0f, Float::sum);
-        System.out.println(input.getRecords().get(0).getSNS().getMessage());
-        System.out.println(order);
+
         var item = new Item()
                 .withKeyComponent("orderNo", order.getOrderNo())
                 .withKeyComponent("userId", order.getUserId())
@@ -44,7 +43,6 @@ public class CreateOrder implements RequestHandler<SNSEvent, Void> {
                 .withString("orderStatus", OrderStatus.Confirmed.toString());
 
         // Validate order (check stock etc.)
-
         var allAvailable = order.getProducts().stream().allMatch(this::checkStock);
         //put product in database
         if (allAvailable) {

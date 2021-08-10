@@ -9,5 +9,5 @@ import java.util.List;
 @AllArgsConstructor
 public class Basket {
     String userId;
-    List<Object> products;
+    List<BasketProduct> products;
 }

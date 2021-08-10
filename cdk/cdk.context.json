@@ -29,5 +29,10 @@
         ]
       }
     ]
-  }
+  },
+  "availability-zones:account=243037674803:region=eu-central-1": [
+    "eu-central-1a",
+    "eu-central-1b",
+    "eu-central-1c"
+  ]
 }
