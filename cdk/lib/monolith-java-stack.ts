@@ -1,13 +1,16 @@
 import * as cdk from '@aws-cdk/core';
-import * as lambda from '@aws-cdk/aws-lambda-nodejs';
+import * as lambda from '@aws-cdk/aws-lambda';
 import * as lambdaes from '@aws-cdk/aws-lambda-event-sources';
 import * as api from '@aws-cdk/aws-apigateway';
 import * as iam from '@aws-cdk/aws-iam';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import * as sns from '@aws-cdk/aws-sns';
 import * as path from 'path';
+import * as events from '@aws-cdk/aws-events';
+import * as targets from '@aws-cdk/aws-events-targets';
 
-export class MonolithTsStack extends cdk.Stack {
+
+export class MonolithJavaStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
@@ -23,9 +26,12 @@ export class MonolithTsStack extends cdk.Stack {
       'ORDER_TOPIC': orderTopic.topicArn
     }
 
-    const func = new lambda.NodejsFunction(this, "MonolithTs", {
-      entry: path.join(__dirname, `/../../monolith_ts/src/handler.ts`),
+    const func = new lambda.Function(this, "MonolithJava", {
+      runtime: lambda.Runtime.JAVA_11,
+      code: lambda.Code.fromAsset(path.join(__dirname, `/../../monolith_java/build/distributions/monolith_java.zip`)),
+      memorySize: 256,
       timeout: cdk.Duration.seconds(30),
+      handler: 'lambda.Handler',
       environment
     })
     func.addToRolePolicy(new iam.PolicyStatement({
@@ -35,8 +41,20 @@ export class MonolithTsStack extends cdk.Stack {
     }))
     const lambdaInt = new api.LambdaIntegration(func)
 
+    const lambdaTarget = new targets.LambdaFunction(func, {
+      event: events.RuleTargetInput.fromObject({
+        resource: '/ping',
+        httpMethod: 'GET'
+      })
+    });
+
+    new events.Rule(this, 'WarmUpRule', {
+      schedule: events.Schedule.rate(cdk.Duration.minutes(5)),
+      targets: [lambdaTarget],
+    });
+
     /////////////////////////////////////////// REST API ///////////////////////////////////////////
-    const restApi = new api.RestApi(this, 'MonolithTsApi', {
+    const restApi = new api.RestApi(this, 'MonolithJavaApi', {
       defaultCorsPreflightOptions: {
         allowOrigins: api.Cors.ALL_ORIGINS,
         allowMethods: api.Cors.ALL_METHODS
@@ -67,5 +85,6 @@ export class MonolithTsStack extends cdk.Stack {
     prodCatRes.addMethod('get', lambdaInt)
     const prodCatIdRes = prodCatRes.addResource('{id}')
     prodCatIdRes.addMethod('get', lambdaInt)
+
   }
 }

@@ -5,6 +5,10 @@ build-dynamo-java:
 	rm -rf dynamo_java/build
 	cd dynamo_java && ./gradlew packageFat
 
+build-monolith-java:
+	rm -rf monolith_java/build
+	cd monolith_java && ./gradlew packageFat
+
 build-spring:
 	rm -rf spring/build
 	cd spring && ./gradlew bootJar
@@ -47,6 +51,9 @@ deploy-dynamo-go: clear build-dynamo-go
 
 deploy-monolith-ts: clear
 	cd cdk && cdk deploy MonolithTs
+
+deploy-monolith-java: clear build-monolith-java
+	cd cdk && cdk deploy MonolithJava
 
 # aws ecr get-login-password --region eu-central-1
 # docker login -u AWS -p <token> 243037674803.dkr.ecr.eu-central-1.amazonaws.com

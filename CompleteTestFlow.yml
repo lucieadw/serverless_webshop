@@ -6,10 +6,10 @@ config:
   # target: "https://k577d65461.execute-api.eu-central-1.amazonaws.com/prod" #DynamoTS
   # target: "https://723t2494u5.execute-api.eu-central-1.amazonaws.com/prod" #DynamoJava
   # target: "https://1gc6d6zwpk.execute-api.eu-central-1.amazonaws.com/prod" #SQLTS
-  # target: "https://jphtushb33.execute-api.eu-central-1.amazonaws.com/prod" #DynamoGo
+  target: "https://jphtushb33.execute-api.eu-central-1.amazonaws.com/prod" #DynamoGo
   # target: "https://y4j0st1yqe.execute-api.eu-central-1.amazonaws.com/prod" #MonolithTS
-  target: "http://Sprin-Websh-1CVDP9XZ2L413-1946740019.eu-central-1.elb.amazonaws.com" #NonServerlessEC2
-  # target: "http://localhost:8080" #Test
+  # target: "https://u2a7ahg5yj.execute-api.eu-central-1.amazonaws.com/prod" #MonolithJava
+  # target: "http://Sprin-Websh-1CVDP9XZ2L413-1946740019.eu-central-1.elb.amazonaws.com" #NonServerlessEC2
 
   http:
     # Responses have to be sent within 30 seconds, or an `ETIMEDOUT` error gets raised.

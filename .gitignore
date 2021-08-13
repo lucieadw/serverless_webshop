@@ -11,8 +11,15 @@ build
 cdk.out
 /dynamo_go/bin
 /dynamo_java/bin
+/monolith_java/bin/
+/monolith_java/build.gradle
+/monolith_java/gradle
+/monolith_java/gradlew
+/monolith_java/gradlew.bat
+/monolith_java/settings.gradle
 /spring/bin
 .settings
 .project
 .classpath
 .DS_Store
+.gitattributes

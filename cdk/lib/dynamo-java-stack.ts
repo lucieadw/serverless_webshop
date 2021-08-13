@@ -60,8 +60,6 @@ export class DynamoJavaStack extends cdk.Stack {
         prodCatRes.addMethod('get', this.createLambdaInt('GetCategory', 'products.GetCategory', env))
         const prodCatIdRes = prodCatRes.addResource('{id}')
         prodCatIdRes.addMethod('get', this.createLambdaInt('GetProduct', 'products.GetProduct', env))
-        // prodCatIdRes.addMethod('put', this.createLambdaInt('UpdateProduct', '/products.UpdateProduct', env))
-        // prodCatIdRes.addMethod('delete', this.createLambdaInt('DeleteProduct', '/products/deleteProduct.ts', env))
 
     }
 
