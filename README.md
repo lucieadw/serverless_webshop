@@ -5,12 +5,14 @@ This repository contains an explorational web shop based on a serverless archite
 
 ### Requirements
 * AWS account
+* AWS CLI
 * CDK
 * Make
 * Node
 * Go
 * Java
 * Docker
+* Load testing: Artillery (command `artillery run CompleteTestFlow.yml`)
 
 
 ### Build and deploy
@@ -62,13 +64,17 @@ The previously shown reference architecture (aka DynamoTs) was modified seven ti
 3. Stack SQLTs: Instead of DynamoDB a relational database (mySQL) was used, all other technologies stayed the same.
 4. Stack DynamoJava: The used language was changed from TypeScript to Java, all other technologies stayed the same.
 5. Stack MonolithJava: Here, the functions also were reduced to a monolithic one with a router, but also with a Java backend instead of TypeScript.
-6. Stack NoColdStartJava: Java has very high start up times which leads to long cold starts. To takle that the fifth stack (MonolithJava) was futher modified with a ping endpoint to ping the function every five minutes, so it stays warm.
-7. Stack NonServerless: The last stack is a classic java spring monolith without serverless but with the same functionality. It serveres primarily a comparison purpose.
+6. Stack NoColdStartJava: Java has very high start up times which leads to long cold starts. To tackle that the fifth stack (MonolithJava) was further modified with a ping endpoint to ping the function every five minutes, so it stays warm.
+7. Stack NonServerless: The last stack is a classic Java Spring monolith without serverless but with the same functionality. It is primarily for comparison.
 
 ![](completeVsFail.png)
+-> Amount of test scenarios completed vs. failed for each stack <br>
 ![](allMedian.png)
+-> Median response time for every stack, that completed all test scenarios <br>
 ![](allp9599.png)
-![](allRes.png)
+-> 95 and 99 percentile for each stack <br>
+![](resAll.png)
+-> Responses per second for every stack that completed all test scenarios <br>
 
 The images above hold the results of the seven stacks in a whole. It shows that the best stacks were DynamoTs, MonolithTs and DynamoGo while SQLTs ans NonServerless were not up for the challenge.
 
